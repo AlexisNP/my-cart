@@ -8,19 +8,43 @@
       <table class="table">
         <thead class="thead-dark">
           <tr>
-            <th scope="col">Catégorie</th>
-            <th scope="col">Produit</th>
-            <th scope="col">Quantité</th>
-            <th scope="col">Prix</th>
+            <th
+              scope="col"
+              @click="sortBasket('category')"
+              :class="sortStates.category ? 'sorted-down' : 'sorted-up'"
+            >
+              Catégorie
+            </th>
+            <th
+              scope="col"
+              @click="sortBasket('name')"
+              :class="sortStates.name ? 'sorted-down' : 'sorted-up'"
+            >
+              Produit
+            </th>
+            <th
+              scope="col"
+              @click="sortBasket('quantity')"
+              :class="sortStates.quantity ? 'sorted-down' : 'sorted-up'"
+            >
+              Quantité
+            </th>
+            <th
+              scope="col"
+              @click="sortBasket('price')"
+              :class="sortStates.price ? 'sorted-down' : 'sorted-up'"
+            >
+              Prix
+            </th>
           </tr>
         </thead>
         <tbody>
-          <cart-row v-for="(product, index) in basket" :key="index" :product="product"/>
+          <cart-row v-for="(product, index) in basketContent" :key="index" :product="product"/>
         </tbody>
         <tfoot>
           <tr class="bg-dark">
             <td colspan="3" class="text-light font-weight-bold">Prix Total</td>
-            <td class="text-light font-weight-bold">{{ totalBasket }}</td>
+            <td class="text-light font-weight-bold">{{ basketTotal }}</td>
           </tr>
         </tfoot>
       </table>
@@ -32,7 +56,10 @@
       </div>
     </div>
     <hr>
-    <cart-form />
+    <cart-form
+      @addProduct="onAddProduct"
+      @resetBasket="onResetBasket"
+    />
   </div>
 </template>
 
@@ -43,10 +70,12 @@ import CartForm from '@/components/cart-form'
 
 export default {
   name: 'cart',
+
   components: {
     'cart-row': CartRow,
     'cart-form': CartForm
   },
+
   data() {
     return {
       header: {
@@ -73,16 +102,77 @@ export default {
           quantity: 6,
           price: 1.14
         }
-      ]
+      ],
+      sortStates: {
+        category: false,
+        name: false,
+        quantity: false,
+        price: false,
+      }
     }
   },
+
   computed: {
-    totalBasket() {
+    basketContent() {
+      return this.basket;
+    },
+    basketTotal() {
       let totalPrice = 0;
       this.basket.forEach(element => {
         totalPrice += element.quantity * element.price
       });
       return totalPrice + this.currency
+    }
+  },
+
+  methods: {
+    onAddProduct(product) {
+      this.basket.push(product);
+    },
+    onResetBasket() {
+      this.basket = [];
+    },
+    sortBasket(method) {
+      let basket = this.basket;
+
+      console.log();
+
+      switch (method) {
+        case 'category':
+          this.sortStates.category =! this.sortStates.category;
+          if (!this.sortStates.category) {
+            return basket.sort((a, b) => a.category.localeCompare(b.category));
+          } else {
+            return basket.sort((a, b) => b.category.localeCompare(a.category));
+          }
+
+        case 'name':
+          this.sortStates.name =! this.sortStates.name;
+          if (!this.sortStates.name) {
+            return basket.sort((a, b) => a.libelle.localeCompare(b.libelle));
+          } else {
+            return basket.sort((a, b) => b.libelle.localeCompare(a.libelle));
+          }
+
+        case 'quantity':
+          this.sortStates.quantity =! this.sortStates.quantity;
+          if (!this.sortStates.quantity) {
+            return basket.sort((a, b) => a.quantity - b.quantity);
+          } else {
+            return basket.sort((a, b) => b.quantity - a.quantity);
+          }
+      
+        case 'price':
+          this.sortStates.price =! this.sortStates.price;
+          if (!this.sortStates.price) {
+            return basket.sort((a, b) => a.price - b.price);
+          } else {
+            return basket.sort((a, b) => b.price - a.price);
+          }
+
+        default:
+          return basket;
+      }
     }
   },
 }
@@ -104,6 +194,37 @@ export default {
     .subtitle {
       font-size: 36px;
       font-weight: 700;
+    }
+  }
+
+  .cart-body {
+    .table {
+      thead {
+        tr {
+          th {
+            position: relative;
+            cursor: pointer;
+            &:after {
+              display: block;
+              position: absolute;
+              top: 50%;
+              right: 40px;
+              transform: translate(-50%, -50%);
+              font-family: 'Material Icons Round';
+            }
+            &.sorted-down {
+              &:after {
+                content: 'keyboard_arrow_down'
+              }
+            }
+            &.sorted-up {
+              &:after {
+                content: 'keyboard_arrow_up'
+              }
+            }
+          }
+        }
+      }
     }
   }
 }

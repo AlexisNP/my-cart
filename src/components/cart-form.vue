@@ -1,23 +1,69 @@
 <template>
   <div class="cart-form">
     <h2 class="font-weight-bold mb-4">{{ header.title }}</h2>
-    <form>
+    <form @submit="addProduct">
       <div class="form-row">
         <div class="form-group col-md-6">
           <label for="category">Catégorie</label>
-          <select class="custom-select">
-            <option disabled selected>Choisir une catégorie</option>
-            <option v-for="(category, index) in listCategories" :key="index" :value="category">{{ category.category }}</option>
+          <select class="custom-select" v-model="activeCategory">
+            <option disabled selected value="false">Choisir une catégorie</option>
+            <option
+              v-for="(category, index) in listCategories"
+              :key="index"
+              :value="category"
+            >
+              {{ category.category }}
+            </option>
           </select>
         </div>
         <div class="form-group col-md-6">
           <label for="product">Produit</label>
-          <select class="custom-select">
-            <option disabled selected>Choisir un produit</option>
-            <option value="1">One</option>
-            <option value="2">Two</option>
-            <option value="3">Three</option>
-          </select>
+          <span v-if="activeCategory">
+            <select class="custom-select" v-model="activeProduct">
+              <option disabled selected value="false">Choisir un produit</option>
+              <option
+                v-for="(product, index) in activeCategory.products"
+                :key="index"
+                :value="product"
+              >
+                {{ product.libelle }}
+              </option>
+            </select>
+          </span>
+          <span v-else>
+            <input
+              class="form-control"
+              type="text"
+              placeholder="Selectionnez une catégorie"
+              readonly
+            >
+          </span>
+        </div>
+        <div class="form-group col-md-6">
+          <input
+            type="number"
+            class="form-control"
+            placeholder="Choisissez une quantité"
+            min="1"
+            max="999"
+            v-model="activeProductQuantity"
+          >
+        </div>
+        <div class="form-group col-md-3">
+          <input
+            type="reset"
+            class="btn btn-outline-secondary btn-block"
+            value="Réinitialiser"
+            @click="resetBasket()"
+          >
+        </div>
+        <div class="form-group col-md-3">
+          <input 
+            type="submit" 
+            class="btn btn-primary btn-block"
+            value="Ajouter"
+            :disabled="checkProduct()"
+          >
         </div>
       </div>
     </form>
@@ -207,21 +253,59 @@ export default {
             }
           ]
         },
-      ]
+      ],
+      activeCategory: false,
+      activeProduct: false,
+      activeProductQuantity: 1,
     }
   },
   computed: {
-    listProducts() {
-      let products = []
-      return products
-    },
     listCategories() {
       let categories = []
-      this.products.forEach(item => {
-        categories.push(item)
+      this.products.forEach(c => {
+        categories.push(c)
       });
       return categories
     },
+  },
+  methods: {
+
+    // Resets the form and props
+    resetForm() {
+      this.activeCategory = false;
+      this.activeProduct = false;
+      this.productQuantity = false;
+    },
+
+    // Resets basket
+    resetBasket() {
+      this.resetForm();
+      this.$emit('resetBasket');
+    },
+
+    // Checks if the product is valid for sending to list
+    checkProduct() {
+      if (
+        !this.activeCategory ||
+        !this.activeProduct ||
+        this.activeProductQuantity < 1
+      ) {
+        return true
+      }
+      return false
+    },
+
+    // Emits event to sibling component
+    addProduct(e) {
+      let product = {};
+        product.libelle = this.activeProduct.libelle;
+        product.price = this.activeProduct.price;
+        product.category = this.activeCategory.category;
+        product.quantity = this.activeProductQuantity;
+      this.$emit('addProduct', product);
+      this.resetForm();
+      e.preventDefault();
+    }
   },
 }
 </script>
